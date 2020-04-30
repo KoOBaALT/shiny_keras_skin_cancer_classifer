@@ -19,11 +19,12 @@ shiny.maxRequestSize=1*1024^2
 jsResetCode <- "shinyjs.reset = function() {history.go(0)}" 
 
 
-#  
-ui <- dashboardPage(
 
+ui <- dashboardPage(
+  #### Header ####
   dashboardHeader(title = "Hautanalyse"),
   
+  #### Sidebar ####
   dashboardSidebar(
     sidebarMenu(
       menuItem("Einführung", tabName = "einführung", icon = icon("book")),
@@ -31,14 +32,15 @@ ui <- dashboardPage(
       menuItem("Informationen zu Errgebnissen", tabName = "informationen", icon = icon("file-alt"))
     )
   ),
-
+  
+ #### Body ####
  dashboardBody(
    useShinyalert(),
    shinyjs::useShinyjs(),
    extendShinyjs(text = jsResetCode), 
    
    
-   #Tab Einführung
+   #### Tab Einführung ####
    tabItems(
      tabItem(tabName = "einführung",
              tags$head(tags$script('
@@ -93,8 +95,9 @@ ui <- dashboardPage(
      
    
    
-   #Tab Ausprobieren
-
+     
+     
+  #### Tab Ausprobieren ####
   tabItem(tabName = "ausprobieren",
            
    fluidRow(
@@ -119,6 +122,9 @@ ui <- dashboardPage(
 
    ),
   
+   
+     
+   #### Tab Informationen ####
    tabItem(tabName = "informationen",
           fluidPage(
             box(
@@ -184,11 +190,13 @@ ui <- dashboardPage(
    )))
  )
 
-# Define server logic required to draw a histogram
+# R Code
 server <- function(input, output, session) {
-
+  
+  # Load Keras Model
   model_cancer <- keras::load_model_hdf5("model_cancer.hdf5")
   
+  # Render Youtube introduction video
   output$video <- renderUI({
   
     e <- paste0('<iframe id="app" src="https://www.youtube.com/embed/9Y0tQVQg4v8" width="',input$dimension[1] - 800,'" height="', input$dimension[2] -500, '" frameborder="0" allowfullscreen></iframe>')
@@ -196,7 +204,7 @@ server <- function(input, output, session) {
     HTML(e)
   })
   
-  
+  # Render example Image
   output$img1 <- renderImage({
     
     
@@ -216,6 +224,7 @@ server <- function(input, output, session) {
   
   print(lobstr::mem_used())
   
+  # Add a login element 
   shinyalert(
     title = "Log in",
     text = "Haftungsausschluss: Es handelt sich bei dieser Webanwendung um die technische Demontration,
@@ -235,6 +244,7 @@ Passwort
     confirmButtonCol = "#26a69a"
   )
   
+  # Logic for Login
   observeEvent(input$shinyalert, {
  
     if (input$shinyalert == "Haut_AI_2019") {
@@ -272,7 +282,7 @@ Passwort
   
   
   
-  
+  # Placeholder for prediction result 1
   output$first_pred <- renderValueBox({
     valueBox("- %", 
              "Ergebnis der Analyse", 
@@ -281,6 +291,7 @@ Passwort
     
   })
   
+  # Placeholder for prediction result 2
   output$second_pred <- renderValueBox({
     valueBox("- %", 
              "Ergebnis der Analyse", 
@@ -289,6 +300,7 @@ Passwort
     
   })
   
+  # Placeholder for prediction result 3
   output$thrid_pred <- renderValueBox({
     valueBox("- %", 
              "Ergebnis der Analyse", 
@@ -298,10 +310,12 @@ Passwort
     
   })
 
+  
   observeEvent(input$file1, {
     values$upload_state <- 2
   })
   
+  # Check input state
   observeEvent(input$start, {
     print("model pre")
     print(lobstr::mem_used())
@@ -319,7 +333,7 @@ Passwort
     }else  {
       
 
-  
+    #### Keras Prediction and Display Part ####
     
     showNotification("Analyse beginnt!", duration = 1.5)
  
@@ -342,7 +356,7 @@ Passwort
     }, deleteFile = FALSE)
     
     
-    ## Predict
+    ## Predict proccess
     print("Transform Image")
     
     img <- image_load(re1(), target_size = c(150, 150))
@@ -359,10 +373,7 @@ Passwort
     good_bad_col <- c("yellow", "red", "green", "green", "red", "green", "yellow")
     top_3 <- sort(prediction, decreasing = T) 
     
-
-    print("Display Prediction")
-    #Display
-
+    # Display the prediction
     output$first_pred <- renderValueBox({
       valueBox(paste0(names(top_3[1]), ": ", round(top_3 [1] * 100,2), "%") , 
                "Ergebnis der Analyse", 
